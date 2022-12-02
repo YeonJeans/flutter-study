@@ -1,14 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_layout_interactivity_image_exercise/widget_exercise.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MaterialApp(
+      title: 'Navigator',
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MyApp(),
+        '/widget': (context) => widgetExercise(),
+      },
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => new _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isStarClicked = true;
+  int _starCnt = 41;
 
   @override
   Widget build(BuildContext context) {
+
+    final ButtonStyle style = ElevatedButton.styleFrom(textStyle: const TextStyle(fontSize: 20));
+
+    void _toggleStar(){
+      setState(() {
+        if (_isStarClicked) {
+          _isStarClicked = false;
+          _starCnt -= 1;
+        } else {
+          _isStarClicked = true;
+          _starCnt += 1;
+        }
+      },
+      );
+    }
+
     Widget titleSection = Container(
       padding: const EdgeInsets.all(32),
       child: Row(
@@ -35,11 +67,16 @@ class MyApp extends StatelessWidget {
               ],
             ),
           ),
-          Icon(
-            Icons.star,
+          IconButton(
+            padding: const EdgeInsets.all(0),
+            alignment: Alignment.centerRight,
+            icon: (_isStarClicked
+                ? const Icon(Icons.star)
+                : const Icon(Icons.star_border)),
             color: Colors.red[500],
+            onPressed: _toggleStar,
           ),
-          const Text('41'),
+          Text(' ${_starCnt}'),
         ],
       ),
     );
@@ -68,11 +105,37 @@ class MyApp extends StatelessWidget {
       ),
     );
 
+    Widget bottomSection(){
+      return Container(
+          padding: const EdgeInsets.all(32),
+          child: Row(
+            children: [
+              Expanded(
+                child : ElevatedButton(
+                  style: style,
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/widget');
+                  },
+                  child: const Text(
+                    '다양한 위젯 사용 실습',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          )
+      );
+    }
+
     return MaterialApp(
       title: 'Flutter layout demo',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Flutter layout demo'),
+          title: const Text('Flutter layout Tutorial'),
         ),
         body: ListView(
           children: [
@@ -85,6 +148,7 @@ class MyApp extends StatelessWidget {
             titleSection,
             buttonSection,
             textSection,
+            bottomSection(),
           ],
         ),
       ),
