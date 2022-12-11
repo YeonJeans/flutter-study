@@ -1,75 +1,108 @@
 import 'package:flutter/material.dart';
-
-class Todo {
-  final String title;
-  final String description;
-
-  const Todo(this.title, this.description);
-}
+import 'package:flutter/physics.dart';
 
 void main() {
-  runApp(
-    MaterialApp(
-      title: 'Passing Data',
-      home: TodosScreen(
-        todos: List.generate(
-          20,
-              (i) => Todo(
-            'Todo $i',
-            'A description of what needs to be done for Todo $i',
-          ),
-        ),
-      ),
-    ),
-  );
+  runApp(const MaterialApp(home: PhysicsCardDragDemo()));
 }
 
-class TodosScreen extends StatelessWidget {
-  const TodosScreen({super.key, required this.todos});
-
-  final List<Todo> todos;
+class PhysicsCardDragDemo extends StatelessWidget {
+  const PhysicsCardDragDemo({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Todos'),
-      ),
-      body: ListView.builder(
-        itemCount: todos.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(todos[index].title),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DetailScreen(todo: todos[index]),
-                ),
-              );
-            },
-          );
-        },
+      appBar: AppBar(),
+      body: const DraggableCard(
+        child: FlutterLogo(
+          size: 128,
+        ),
       ),
     );
   }
 }
 
-class DetailScreen extends StatelessWidget {
+class DraggableCard extends StatefulWidget {
+  const DraggableCard({required this.child, super.key});
 
-  const DetailScreen({super.key, required this.todo});
+  final Widget child;
 
-  final Todo todo;
+  @override
+  State<DraggableCard> createState() => _DraggableCardState();
+}
+
+class _DraggableCardState extends State<DraggableCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  Alignment _dragAlignment = Alignment.center;
+
+  late Animation<Alignment> _animation;
+
+  void _runAnimation(Offset pixelsPerSecond, Size size) {
+    _animation = _controller.drive(
+      AlignmentTween(
+        begin: _dragAlignment,
+        end: Alignment.center,
+      ),
+    );
+
+    final unitsPerSecondX = pixelsPerSecond.dx / size.width;
+    final unitsPerSecondY = pixelsPerSecond.dy / size.height;
+    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
+    final unitVelocity = unitsPerSecond.distance;
+
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
+
+    final simulation = SpringSimulation(spring, 0, 1, -unitVelocity);
+
+    _controller.animateWith(simulation);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+
+    _controller.addListener(() {
+      setState(() {
+        _dragAlignment = _animation.value;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(todo.title),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(todo.description),
+    final size = MediaQuery.of(context).size;
+    return GestureDetector(
+      onPanDown: (details) {
+        _controller.stop();
+      },
+      onPanUpdate: (details) {
+        setState(() {
+          _dragAlignment += Alignment(
+            details.delta.dx / (size.width / 2),
+            details.delta.dy / (size.height / 2),
+          );
+        });
+      },
+      onPanEnd: (details) {
+        _runAnimation(details.velocity.pixelsPerSecond, size);
+      },
+      child: Align(
+        alignment: _dragAlignment,
+        child: Card(
+          child: widget.child,
+        ),
       ),
     );
   }
