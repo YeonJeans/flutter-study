@@ -1,109 +1,83 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 
-void main() {
-  runApp(const MaterialApp(home: PhysicsCardDragDemo()));
-}
+void main() => runApp(const LogoApp());
 
-class PhysicsCardDragDemo extends StatelessWidget {
-  const PhysicsCardDragDemo({super.key});
+class LogoWidget extends StatelessWidget {
+  const LogoWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: const DraggableCard(
-        child: FlutterLogo(
-          size: 128,
-        ),
-      ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: const FlutterLogo(),
     );
   }
 }
 
-class DraggableCard extends StatefulWidget {
-  const DraggableCard({required this.child, super.key});
+class GrowTransition extends StatelessWidget {
+  const GrowTransition(
+      {required this.child, required this.animation, super.key});
 
   final Widget child;
+  final Animation<double> animation;
 
   @override
-  State<DraggableCard> createState() => _DraggableCardState();
-}
-
-class _DraggableCardState extends State<DraggableCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  Alignment _dragAlignment = Alignment.center;
-
-  late Animation<Alignment> _animation;
-
-  void _runAnimation(Offset pixelsPerSecond, Size size) {
-    _animation = _controller.drive(
-      AlignmentTween(
-        begin: _dragAlignment,
-        end: Alignment.center,
+  Widget build(BuildContext context) {
+    return Center(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) {
+          return SizedBox(
+            height: animation.value,
+            width: animation.value,
+            child: child,
+          );
+        },
+        child: child,
       ),
     );
-
-    final unitsPerSecondX = pixelsPerSecond.dx / size.width;
-    final unitsPerSecondY = pixelsPerSecond.dy / size.height;
-    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
-    final unitVelocity = unitsPerSecond.distance;
-
-    const spring = SpringDescription(
-      mass: 30,
-      stiffness: 1,
-      damping: 1,
-    );
-
-    final simulation = SpringSimulation(spring, 0, 1, -unitVelocity);
-
-    _controller.animateWith(simulation);
   }
+}
+
+class LogoApp extends StatefulWidget {
+  const LogoApp({super.key});
+
+  @override
+  State<LogoApp> createState() => _LogoAppState();
+}
+
+class _LogoAppState extends State<LogoApp> with SingleTickerProviderStateMixin {
+  late Animation<double> animation;
+  late AnimationController controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this);
-
-    _controller.addListener(() {
-      setState(() {
-        _dragAlignment = _animation.value;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    controller =
+        AnimationController(duration: const Duration(seconds: 2), vsync: this);
+    animation = Tween<double>(begin: 0, end: 300).animate(controller)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          controller.reverse();
+        } else if (status == AnimationStatus.dismissed) {
+          controller.forward();
+        }
+      })
+      ..addStatusListener((status) => print('$status'));
+    controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return GestureDetector(
-      onPanDown: (details) {
-        _controller.stop();
-      },
-      onPanUpdate: (details) {
-        setState(() {
-          _dragAlignment += Alignment(
-            details.delta.dx / (size.width / 2),
-            details.delta.dy / (size.height / 2),
-          );
-        });
-      },
-      onPanEnd: (details) {
-        _runAnimation(details.velocity.pixelsPerSecond, size);
-      },
-      child: Align(
-        alignment: _dragAlignment,
-        child: Card(
-          child: widget.child,
-        ),
-      ),
+    return GrowTransition(
+        animation: animation,
+        child: const LogoWidget()
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }
