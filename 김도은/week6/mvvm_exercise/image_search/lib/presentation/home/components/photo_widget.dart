@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:image_search/data/api.dart';
 
-import '../../model/photo.dart';
+import '../../../domain/model/photo.dart';
 
 //depth 가 깊어질 경우, 데이터를 밑에까지 전달해야함
-//원하는 곳으로 데이터를 전달하는 inherited widget 사용
+//원하는 곳으로 데이터를 전달하는 inherited components 사용
 class PhotoWidget extends StatelessWidget {
   final Photo photo;
 
